@@ -2,11 +2,15 @@ import * as S from "./styles";
 import { Button, Heading, MultiStep, Text, TextInput } from "@ignite-ui/react";
 import { ArrowRight } from "phosphor-react";
 
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/router";
-import { useEffect } from "react";
+
+import { api } from "@/lib/axios";
+import { AxiosError } from "axios";
 
 const registerFormSchema = z.object({
     username: z
@@ -35,8 +39,22 @@ export default function Register() {
         resolver: zodResolver(registerFormSchema),
     });
 
-    async function handleRegister(data: RegisterFormData) {
-        console.log(data);
+    async function handleRegister({ name, username }: RegisterFormData) {
+        try {
+            const response = await api.post("/users", {
+                name,
+                username,
+            });
+
+            await router.push("/register/connect-calendar");
+        } catch (err) {
+            if (err instanceof AxiosError && err.response?.data?.message) {
+                alert(err.response.data.message);
+                return;
+            }
+
+            console.error(err);
+        }
     }
 
     useEffect(() => {
@@ -84,7 +102,7 @@ export default function Register() {
                     )}
                 </label>
 
-                <Button type="submit">
+                <Button type="submit" disabled={isSubmitting}>
                     Próximo passo <ArrowRight />
                 </Button>
             </S.Form>
